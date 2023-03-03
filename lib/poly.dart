@@ -1,11 +1,10 @@
 
 import 'dart:typed_data';
+import 'dart:ui';
 
-import 'package:simple3d/view.dart';
+import 'package:simple3d/view3d.dart';
 import 'package:vector_math/vector_math_64.dart';
 
-
-import 'dart:ui';
 import 'display.dart';
 
 class Poly {
@@ -29,7 +28,7 @@ class Poly {
 
 
 
-  render(Canvas canvas, View v,  Matrix4 tx) {
+  render(Canvas canvas, View3d v,  Matrix4 tx) {
     var nearPlane = tx.transformed(centroid).w;
     if( nearPlane < 10) {
       return;

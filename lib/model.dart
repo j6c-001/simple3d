@@ -2,7 +2,7 @@
 import 'package:vector_math/vector_math_64.dart';
 
 import 'poly.dart';
-import 'view.dart';
+import 'view3d.dart';
 
 
 class Model {
@@ -20,12 +20,12 @@ class Model {
 
 
 mixin ModelInstance {
-  late Model model;
+  late  Model model;
   final Matrix4 mm = Matrix4.zero();
 
   Vector3 scale = Vector3(1, 1, 1);
 
-  void prepareFrame(Vector3 position, Vector3 heading,  View view, double angle) {
+  void prepareFrame(Vector3 position, Vector3 heading,  View3d view, double angle) {
     setModelMatrix(mm, heading.normalized() , Vector3(0, -1, 0),
         position.x, position.y, position.z);
     mm.scale(scale.x, scale.y, scale.z);

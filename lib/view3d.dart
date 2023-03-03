@@ -1,5 +1,4 @@
 
-import 'dart:math';
 import 'dart:typed_data';
 import 'dart:ui';
 
@@ -7,8 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:simple3d/vertex_model.dart';
 import 'package:vector_math/vector_math.dart';
 
-import 'constants.dart';
-import 'poly.dart';
+
 
 final  Vector3 up = Vector3(0,-1,0);
 
@@ -21,22 +19,26 @@ class Tri {
   Tri(this.v0, this.v1, this.v2);
 }
 
-class View {
+const sizes = 60000;
+class View3d {
   Vector2 dimensions;
-  Matrix4 matrix = Matrix4.zero();
+
+  final projection = makePerspectiveMatrix(57.3  , 16/9, 1, -1);
+
+  Matrix4 matrix = Matrix4.zero(); // Projection * View.
   Matrix4 view = Matrix4.zero();
-  List<Tri> tris = List.generate(60000, (index) => Tri(0,0,0));
   Vector3 cam = Vector3.zero();
   Vector3 target = Vector3.zero();
   Vector3 camTemp = Vector3.zero();
 
-  final Paint paint = Paint();
+  final Paint paint = Paint()..isAntiAlias = true;
 
-  List<double> depth =   Float32List(60000);
-  Float32List vertices = Float32List(60000);
+  Float32List depth ;
+  Float32List vertices;
+  Float32List tex;
   Uint16List indices;
   Int32List colors;
-
+  List<Tri> tris;
 
   // stats tracking
   int cntPolys = 0;  // # of polygons processed
@@ -48,13 +50,18 @@ class View {
   int vertexIndex = 0;
   int indiceIndex = 0;
   int triIndex = 0;
+  
 
-  View(this.maxTris, double sizeX, double sizeY):
+  View3d(this.maxTris, double sizeX, double sizeY):
         dimensions = Vector2(sizeX, sizeY),
         indices = Uint16List(maxTris * 3),
-        colors = Int32List(60000);
+        tris = List.generate(maxTris, (index) => Tri(0,0,0)),
+        depth = Float32List(maxTris),
+        colors = Int32List(maxTris * 3),
+        vertices = Float32List(maxTris * 3 * 2),
+        tex = Float32List(maxTris * 3 * 2);
 
-  final p = makePerspectiveMatrix(57.3 * 2 , 16/9, 1, -1);
+
 
   prepareFrame() {
     vertexIndex = 0;
@@ -64,8 +71,10 @@ class View {
     cntPolys = 0;
   }
 
+
+  Matrix4 VxMM = Matrix4.zero();
   void addModelInstances(VertexModel m, Matrix4 mm) {
-    Matrix4 VxMM = Matrix4.copy(matrix);
+    VxMM.setFrom(matrix);
     VxMM.multiply(mm);
 
     int vertexIndexOffset = vertexIndex ~/ 2;
@@ -75,13 +84,13 @@ class View {
       Vector3 v = m.vertices[i];
       tv.setValues(v.x, v.y, v.z, 1);
       VxMM.transform(tv);
+
       depth[vertexIndex ~/ 2] = tv.w;
       vertices[vertexIndex++] = (tv.x/tv.w+1)*dimensions.x/2;
       vertices[vertexIndex++] = (tv.y/tv.w+1)*dimensions.y/2;
       colors[colorIndex++] = m.colors[colorIndex % m.colors.length];
+
     }
-
-
 
     for(int t = 0 ; t < m.indices.length;) {
       var v = tris[triIndex];
@@ -91,7 +100,7 @@ class View {
       v.depth = (depth[v.v0] + depth[v.v1] + depth[v.v2]) / 3;
 
       cntPolys++;
-      if (v.depth < 10 || (vertices[v.v0*2] > dimensions.x) || (vertices[v.v0*2+1] > dimensions.y)
+      if (v.depth < 1 || (vertices[v.v0*2] > dimensions.x) || (vertices[v.v0*2+1] > dimensions.y)
         || (vertices[v.v1*2] > dimensions.x) || (vertices[v.v1*2+1] > dimensions.y)
         || (vertices[v.v2*2] > dimensions.x) || (vertices[v.v2*2+1] > dimensions.y)
         || (vertices[v.v0*2] < 0) || (vertices[v.v0*2+1] < 0 )
@@ -104,17 +113,16 @@ class View {
       triIndex++;
     }
 
-
-
   }
 
   renderFrame(Canvas c) {
+    cntPolysRendered = triIndex;
 
-    if (vertexIndex == 0 ) {
+    if (cntPolysRendered == 0) {
       return;
     }
 
-    cntPolysRendered = triIndex;
+
     // sort the tri farthest to nearest
     mergeSort<Tri>(tris, start: 0, end: triIndex, compare: (Tri a, Tri b) => a.depth > b.depth ? -1 : 1);
 
@@ -126,20 +134,25 @@ class View {
         indices[indiceIndex++] = tris[t].v2;
     }
 
-    final vs = Vertices.raw(VertexMode.triangles,
-        Float32List.sublistView(vertices,0, vertexIndex),
+    final vl = Float32List.sublistView(vertices, 0, vertexIndex);
+
+    Vertices vs = Vertices.raw(VertexMode.triangles,
+        vl,
         indices: Uint16List.sublistView(indices, 0, indiceIndex),
-        colors:  Int32List.sublistView(colors, 0, colorIndex)
+        colors: colors.sublist(0, colorIndex) // Int32List.sublist(colors, 0, colorIndex),
+       //
+    //  textureCoordinates: vl
     );
 
-     c.drawVertices(vs, BlendMode.dst, paint);
+
+    c.drawVertices(vs, BlendMode.srcATop, paint);
   }
 
-  update(cx,cy,cz, tx,ty,tz) {
+  update(double  cx,double cy,double cz, double tx,double ty, double tz) {
     cam.setValues(cx,cy,cz);
     target.setValues(tx,ty,tz);
     setViewMatrix(view, cam, target, up);
-    matrix.setFrom(p);
+    matrix.setFrom(projection);
     matrix.multiply(view);
   }
 

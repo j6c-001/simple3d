@@ -1,11 +1,12 @@
 
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/painting.dart';
 import 'package:vector_math/vector_math.dart';
 import 'package:vector_math/vector_math_lists.dart';
 
-import 'view.dart';
+import 'view3d.dart';
 
 
 class VertexModel {
@@ -28,28 +29,21 @@ class VertexModelInstance {
 
   VertexModelInstance();
 
-  void prepareFrame(px,py,pz,  fx, fy, fz,  View view, double angle) {
-    facing.setValues(fx,fy,fz);
-    setModelMatrix(mm, facing, Vector3(0, -1, 0),px,py,pz);
-    //mm.scale(scale.x, scale.y, scale.z);
-    //mm.rotate(facing, angle);
+  void prepareFrame(double px,double py,double pz,  double fx, double fy, double fz,  View3d view, double angle) {
+    final  l = sqrt(fx*fx + fy*fy + fz *fz);
+    facing.setValues(fx/l,fy/l, fz/l);
+    setModelMatrix(mm, facing, up,px,py,pz);
+    mm.scale(scale.x, scale.y, scale.z);
+    mm.rotate(facing, angle);
     view.addModelInstances(model, mm);
-/*
-    for (var poly in model.polys) {
-      view.addPoly(mm, poly);
-    }
-*/
+
   }
 }
-
-
-
-
 
 VertexModel makeVertexModel(List data, {bool swap = false}) {
   final  List<List> vertList = data[0];
   final List<Vector3> vectors = vertList.fold([], (c, v) {
-      c.add(Vector3(v[2]*1.0, v[1]*1.0, v[0]*.1));
+      c.add(Vector3(v[0]*1.0, v[1]*1.0, v[2]*1.0));
       return c;
   });
   final vertices = Vector3List.fromList(vectors);
