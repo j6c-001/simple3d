@@ -19,7 +19,7 @@ class Tri {
   Tri(this.v0, this.v1, this.v2);
 }
 
-const sizes = 60000;
+const sizes = 65000;
 class View3d {
   Vector2 dimensions;
 
@@ -73,13 +73,14 @@ class View3d {
 
 
   Matrix4 VxMM = Matrix4.zero();
+  Vector4 tv = Vector4.zero();
   void addModelInstances(VertexModel m, Matrix4 mm) {
     VxMM.setFrom(matrix);
     VxMM.multiply(mm);
 
     int vertexIndexOffset = vertexIndex ~/ 2;
-    Vector4 tv = Vector4.zero();
-    for(int i = 0; i < m.vertices.length; i++)
+
+   for(int i = 0; i < m.vertices.length; ++i)
     {
       Vector3 v = m.vertices[i];
       tv.setValues(v.x, v.y, v.z, 1);
@@ -110,7 +111,7 @@ class View3d {
         continue;
       }
 
-      triIndex++;
+      ++triIndex;
     }
 
   }
@@ -134,14 +135,10 @@ class View3d {
         indices[indiceIndex++] = tris[t].v2;
     }
 
-    final vl = Float32List.sublistView(vertices, 0, vertexIndex);
-
     Vertices vs = Vertices.raw(VertexMode.triangles,
-        vl,
+        Float32List.sublistView(vertices, 0, vertexIndex),
         indices: Uint16List.sublistView(indices, 0, indiceIndex),
         colors: colors.sublist(0, colorIndex) // Int32List.sublist(colors, 0, colorIndex),
-       //
-    //  textureCoordinates: vl
     );
 
 

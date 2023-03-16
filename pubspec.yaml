@@ -1,7 +1,7 @@
 name: simple3d
-description: A new Flutter package project.
+description: Simple framework for rendering simple 3d modles in flutter/dart
 version: 0.0.1
-homepage:
+homepage: https://j6c-001.github.io/badboids
 
 environment:
   sdk: '>=2.18.0 <3.0.0'
