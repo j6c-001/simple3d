@@ -12,11 +12,22 @@ final  Vector3 up = Vector3(0,-1,0);
 
 
 class Tri {
-  int v0;
-  int v1;
-  int v2;
+  Float32List v = Float32List(9);
   double depth = 0;
-  Tri(this.v0, this.v1, this.v2);
+  int color = 0;
+
+  void set(int i, int si, Float32List source) {
+    v[i*3+0] = source[si*3+0];
+    v[i*3+1] = source[si*3+1];
+    v[i*3+2] = source[si*3+2];
+
+  }
+
+  double x(int i) => v[i*3+0];
+  double y(int i) => v[i*3+1];
+  double z(int i) => v[i*3+2];
+
+
 }
 
 const sizes = 65000;
@@ -32,6 +43,8 @@ class View3d {
   Vector3 camTemp = Vector3.zero();
 
   final Paint paint = Paint()..isAntiAlias = true;
+
+  BlendMode blendMode = BlendMode.dst;
 
   Float32List depth ;
   Float32List vertices;
@@ -55,7 +68,7 @@ class View3d {
   View3d(this.maxTris, double sizeX, double sizeY):
         dimensions = Vector2(sizeX, sizeY),
         indices = Uint16List(maxTris * 3),
-        tris = List.generate(maxTris, (index) => Tri(0,0,0)),
+        tris = List.generate(maxTris, (index) => Tri()),
         depth = Float32List(maxTris),
         colors = Int32List(maxTris * 3),
         vertices = Float32List(maxTris * 3 * 2),
@@ -74,11 +87,11 @@ class View3d {
 
   Matrix4 VxMM = Matrix4.zero();
   Vector4 tv = Vector4.zero();
+
+  Float32List screenSpaceWorking = Float32List(300);
   void addModelInstances(VertexModel m, Matrix4 mm) {
     VxMM.setFrom(matrix);
     VxMM.multiply(mm);
-
-    int vertexIndexOffset = vertexIndex ~/ 2;
 
    for(int i = 0; i < m.vertices.length; ++i)
     {
@@ -86,27 +99,30 @@ class View3d {
       tv.setValues(v.x, v.y, v.z, 1);
       VxMM.transform(tv);
 
-      depth[vertexIndex ~/ 2] = tv.w;
-      vertices[vertexIndex++] = (tv.x/tv.w+1)*dimensions.x/2;
-      vertices[vertexIndex++] = (tv.y/tv.w+1)*dimensions.y/2;
-      colors[colorIndex++] = m.colors[colorIndex % m.colors.length];
+      screenSpaceWorking[i*3+0] = (tv.x/tv.w+1)*dimensions.x/2;
+      screenSpaceWorking[i*3+1] = (tv.y/tv.w+1)*dimensions.y/2;
+      screenSpaceWorking[i*3+2] = tv.w;
 
     }
 
     for(int t = 0 ; t < m.indices.length;) {
-      var v = tris[triIndex];
-      v.v0 = vertexIndexOffset + m.indices[t++];
-      v.v1 = vertexIndexOffset + m.indices[t++];
-      v.v2 = vertexIndexOffset + m.indices[t++];
-      v.depth = (depth[v.v0] + depth[v.v1] + depth[v.v2]) / 3;
+      Tri tri = tris[triIndex];
+      tri.color = m.colors[t ~/ 3];
+
+      tri.set(0, m.indices[t++], screenSpaceWorking);
+      tri.set(1, m.indices[t++], screenSpaceWorking);
+      tri.set(2, m.indices[t++], screenSpaceWorking);
+
+      tri.depth = (tri.z(0) + tri.z(1)  + tri.z(2))/3;
 
       cntPolys++;
-      if (v.depth < 1 || (vertices[v.v0*2] > dimensions.x) || (vertices[v.v0*2+1] > dimensions.y)
-        || (vertices[v.v1*2] > dimensions.x) || (vertices[v.v1*2+1] > dimensions.y)
-        || (vertices[v.v2*2] > dimensions.x) || (vertices[v.v2*2+1] > dimensions.y)
-        || (vertices[v.v0*2] < 0) || (vertices[v.v0*2+1] < 0 )
-        || (vertices[v.v1*2] < 0) || (vertices[v.v1*2+1] < 0 )
-        || (vertices[v.v2*2] < 0) || (vertices[v.v2*2+1] < 0 )
+      if (tri.depth < 1
+          || (tri.x(0) > dimensions.x) || (tri.y(0) > dimensions.y)
+          || (tri.x(1) > dimensions.x) || (tri.y(1) > dimensions.y)
+          || (tri.x(2) > dimensions.x) || (tri.y(2) > dimensions.y)
+          || (tri.x(0) < 0) || (tri.y(0) < 0)
+          || (tri.x(1) < 0) || (tri.y(1) < 0)
+          || (tri.x(2) < 0) || (tri.y(2) < 0)
       )  {
         continue;
       }
@@ -127,14 +143,30 @@ class View3d {
     // sort the tri farthest to nearest
     mergeSort<Tri>(tris, start: 0, end: triIndex, compare: (Tri a, Tri b) => a.depth > b.depth ? -1 : 1);
 
-    // write the indices into the array in the sorted order
+    // write the duplicated vertices and indices into the array in the sorted order
     indiceIndex = 0;
+    int vi = 0;
     for(int t = 0; t < triIndex; t++) {
-        indices[indiceIndex++] = tris[t].v0;
-        indices[indiceIndex++] = tris[t].v1;
-        indices[indiceIndex++] = tris[t].v2;
-    }
+       Tri tri = tris[t];
+        vertices[vi++] = tri.x(0);
+        vertices[vi++] = tri.y(0);
+        vertices[vi++] = tri.x(1);
+        vertices[vi++] = tri.y(1);
+        vertices[vi++] = tri.x(2);
+        vertices[vi++] = tri.y(2);
 
+        colors[t*3+0] = tri.color;
+        colors[t*3+1] = tri.color;
+        colors[t*3+2] = tri.color;
+
+
+        indices[indiceIndex++] = t*3;
+        indices[indiceIndex++] = t*3+1;
+        indices[indiceIndex++] = t*3+2;
+
+    }
+    vertexIndex = vi;
+    colorIndex = vi ~/ 2;
     Vertices vs = Vertices.raw(VertexMode.triangles,
         Float32List.sublistView(vertices, 0, vertexIndex),
         indices: Uint16List.sublistView(indices, 0, indiceIndex),
@@ -142,7 +174,7 @@ class View3d {
     );
 
 
-    c.drawVertices(vs, BlendMode.srcATop, paint);
+    c.drawVertices(vs, blendMode, paint);
   }
 
   update(double  cx,double cy,double cz, double tx,double ty, double tz) {

@@ -51,7 +51,7 @@ VertexModel makeVertexModel(List data, {bool swap = false}) {
   final List<List> faces = data[1];
 
   final indices =  Uint16List(3 *  faces.length);
-  final colors = Int32List(vertices.length);
+  final colors = Int32List(faces.length);
 
   int i = 0;
   for (List face in faces) {
@@ -60,7 +60,7 @@ VertexModel makeVertexModel(List data, {bool swap = false}) {
       indices[i*3] = tri[0];
       indices[i*3+1] = tri[1];
       indices[i*3+2] = tri[2];
-      colors[i % vertices.length] = color.value;
+      colors[i] = color.value;
       i++;
   }
   return VertexModel(vertices, indices, colors);
