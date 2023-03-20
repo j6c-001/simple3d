@@ -34,7 +34,7 @@ class VertexModelInstance {
     facing.setValues(fx/l,fy/l, fz/l);
     setModelMatrix(mm, facing, up,px,py,pz);
     mm.scale(scale.x, scale.y, scale.z);
-    mm.rotate(facing, angle);
+    mm.rotate(Vector3(facing.y,facing.x, facing.z), angle); // TO DO
     view.addModelInstances(model, mm);
 
   }

@@ -32,6 +32,7 @@ class Tri {
 
 const sizes = 65000;
 class View3d {
+  Vector2 pos = Vector2.zero();
   Vector2 dimensions;
 
   final projection = makePerspectiveMatrix(57.3  , 16/9, 1, -1);
@@ -99,8 +100,8 @@ class View3d {
       tv.setValues(v.x, v.y, v.z, 1);
       VxMM.transform(tv);
 
-      screenSpaceWorking[i*3+0] = (tv.x/tv.w+1)*dimensions.x/2;
-      screenSpaceWorking[i*3+1] = (tv.y/tv.w+1)*dimensions.y/2;
+      screenSpaceWorking[i*3+0] = pos.x+(tv.x/tv.w+1)*dimensions.x/2;
+      screenSpaceWorking[i*3+1] = pos.y+(tv.y/tv.w+1)*dimensions.y/2;
       screenSpaceWorking[i*3+2] = tv.w;
 
     }
@@ -117,12 +118,12 @@ class View3d {
 
       cntPolys++;
       if (tri.depth < 1
-          || (tri.x(0) > dimensions.x) || (tri.y(0) > dimensions.y)
-          || (tri.x(1) > dimensions.x) || (tri.y(1) > dimensions.y)
-          || (tri.x(2) > dimensions.x) || (tri.y(2) > dimensions.y)
-          || (tri.x(0) < 0) || (tri.y(0) < 0)
-          || (tri.x(1) < 0) || (tri.y(1) < 0)
-          || (tri.x(2) < 0) || (tri.y(2) < 0)
+          || (tri.x(0) > pos.x+dimensions.x) || (tri.y(0) > pos.y+dimensions.y)
+          || (tri.x(1) > pos.x+dimensions.x) || (tri.y(1) > pos.y+dimensions.y)
+          || (tri.x(2) > pos.x+dimensions.x) || (tri.y(2) > pos.y+dimensions.y)
+          || (tri.x(0) < pos.x) || (tri.y(0) < pos.y)
+          || (tri.x(1) < pos.x) || (tri.y(1) < pos.y)
+          || (tri.x(2) < pos.x) || (tri.y(2) < pos.y)
       )  {
         continue;
       }
