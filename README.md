@@ -1,39 +1,71 @@
-<!--
-This README describes the package. If you publish this package to pub.dev,
-this README's contents appear on the landing page for your package.
 
-For information about how to write a good package README, see the guide for
-[writing package pages](https://dart.dev/guides/libraries/writing-package-pages).
-
-For general information about developing packages, see the Dart guide for
-[creating packages](https://dart.dev/guides/libraries/create-library-packages)
-and the Flutter guide for
-[developing packages and plugins](https://flutter.dev/developing-packages).
--->
-
-TODO: Put a short description of the package here that helps potential users
-know whether this package might be useful for them.
+The Simple 3D package is a very (very) simple 3D rendering framework.
 
 ## Features
 
-TODO: List what your package can do. Maybe include images, gifs, or videos.
+- Supports definition and rendering of very basic 3D models. Model definitions can be instanced as many times as needed. 
+- Simple 3D batches the triangles that make up models into  a single drawVertices call so it is quite efficient.
+- Works well on web in addition to native platforms.
+
+## Anti Features
+- lighting and shadows etc. are not supported at this time.
 
 ## Getting started
 
-TODO: List prerequisites and provide or point to information on how to
-start using the package.
+Have a look at the demos below.
+
+Define as many ```View3d``` instances as you want. Each instance is like a specific view on a scene. It draws all
+the models it knows about whenever ```View3d.render()``` is called. 
+
+Define a ```VertexModel``` using the helper function ```makeVertexModel```
+Create an instance of the model with VertexModelInstance, and use 
+
+Use ```VertextModelInstance.prepareFrame()``` to tell a view the current position and orientation.
 
 ## Usage
 
-TODO: Include short and useful examples for package users. Add longer examples
-to `/example` folder.
+Basic Usage demonstrating multiple viewports
+- https://github.com/j6c-001/drawing
 
+Demo integrated with the Flame Engine
+- https://github.com/j6c-001/badboids
+
+Basic Model Definition
 ```dart
-const like = 'sample';
+final aBox =  makeVertexModel([
+  [ /// These are your vertices defined in model space.
+    [-1, 1, -1], // 0
+    [ 1, 1, -1], // 1
+    [ 1, 1,  1], // 2
+    [-1, 1,  1], // 3
+    [-1, -1, -1], // 4
+    [ 1, -1, -1], // 5
+    [1, -1,  1], // 6
+    [-1, -1,  1], // 7
+  ]    ,  [ /// these are the triangles built from color the vertex indices 
+    [Colors.red, [0, 1, 2]],
+    [Colors.green, [0,2,3]],
+    
+    [Colors.red, [4, 5, 6]],
+    [Colors.green, [4,6,7]],
+    
+    [Colors.red, [0, 3, 7]],
+    [Colors.green, [0, 4, 7]],
+
+
+    [Colors.red, [3, 6, 7]],
+    [Colors.green, [2, 3, 6]],
+
+    [Colors.red, [4, 5, 0]],
+    [Colors.green, [5, 1, 0]],
+    
+    [Colors.red, [1, 2, 6]],
+    [Colors.green, [1, 6, 5]],
+    
+  ]
+]);
 ```
 
 ## Additional information
 
-TODO: Tell users more about the package: where to find more information, how to
-contribute to the package, how to file issues, what response they can expect
-from the package authors, and more.
+This is a personal project for fun!
