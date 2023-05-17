@@ -89,7 +89,7 @@ class View3d {
   Matrix4 VxMM = Matrix4.zero();
   Vector4 tv = Vector4.zero();
 
-  Float32List screenSpaceWorking = Float32List(300);
+  Float32List screenSpaceWorking = Float32List(30000);
   void addModelInstances(VertexModel m, Matrix4 mm) {
     VxMM.setFrom(matrix);
     VxMM.multiply(mm);
